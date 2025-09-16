@@ -1,46 +1,109 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
 
-In the project directory, you can run:
+GitHub Search App (with Anti‑Tamper + Obfuscation)
+Search GitHub repositories using natural language with a clean UI. Includes client-side anti-tamper protections and post-build JavaScript obfuscation.
 
-### `npm start`
+Features
+- GitHub search with star-sorted results
+- Repository cards: avatar, name, owner, description, stars, forks, language, last updated
+- Anti-tamper hardening: blocks F12, Ctrl+Shift+I/J/C/K, Ctrl+U/S/P, right-click, copy/cut/paste; detects DevTools and overlays the page
+- Security headers (CSP, X-Frame-Options) added in HTML
+- Post-build JS obfuscation for production builds
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Requirements
+- Node.js 18+ and npm
+- Internet access to GitHub API
+- Note: The app calls GitHub Search API from the browser without an auth token; heavy usage may hit rate limits
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Getting Started
 
-### `npm test`
+1) Install dependencies
+```bash
+npm install
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2) Start development server
+```bash
+npm run dev
+```
+- Opens a local dev server (hot reload). Anti-tamper runs, but code is not obfuscated in dev.
 
-### `npm run build`
+3) Production build (with obfuscation)
+```bash
+npm run build
+```
+- Builds the app via CRA and runs postbuild obfuscation on build/static/js/**/*.js.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+4) Preview production build locally
+```bash
+npx serve -s build
+```
+- Serves minified + obfuscated build.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Project Scripts
+- npm run dev: React dev server (react-scripts start)
+- npm run build: Production build + postbuild obfuscation
+- postbuild: node scripts/obfuscate.cjs (automatically run after build)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Code Structure
+- public/index.html: Base HTML + security headers + anti-tamper script injection
+- public/anti-tamper.js: Client-side protections (keyboard shortcut blocks, DevTools detection, overlay)
+- scripts/obfuscate.cjs: Node script to obfuscate build/static/js/*.js with javascript-obfuscator
+- src/: React app source (components, hooks, types)
 
-### `npm run eject`
+Security & Hardening
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Anti-tamper runtime (client-side)
+- Location: public/anti-tamper.js
+- Blocks common inspection shortcuts (F12, Ctrl+Shift+I/J/C/K, Ctrl+U/S/P), right-click, clipboard events
+- Simple DevTools detection; if open, overlays and disables interaction
+- Caveat: Client-side defenses can be bypassed by advanced users. Do not ship secrets to the browser.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Content Security Policy (CSP)
+- Location: public/index.html
+- Restricts sources to self and GitHub API, tightens image/script/style/connect, disallows framing
+- Adjust CSP if you add external assets or analytics
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Obfuscation
+- Location: scripts/obfuscate.cjs
+- Runs automatically after build; rewrites JS files under build/static/js
+- Options: controlFlowFlattening, deadCodeInjection, stringArrayEncoding, etc.
+- Note: Obfuscation increases bundle complexity and may impact performance; adjust options if needed.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Customization
 
-## Learn More
+Change app name/metadata
+- public/index.html: <title> and meta description
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Adjust anti-tamper behavior
+- public/anti-tamper.js:
+  - Remove or modify blocked shortcuts
+  - Tweak overlay message or behavior
+  - You can disable during development by commenting out the script tag in public/index.html
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Relax CSP for external assets
+- public/index.html: Update the meta http-equiv="Content-Security-Policy" tag to include additional domains as needed
+
+Deployment
+
+Vercel (recommended)
+- Create a new project from the GitHub repo
+- Build command: npm run build
+- Output directory: build
+- No server required (static SPA)
+
+GitHub Pages
+- Build locally: npm run build
+- Push the build directory to the gh-pages branch using a tool like gh-pages, or configure your repo Pages to serve from /root and publish the build/ contents accordingly
+
+Troubleshooting
+- Rate limiting from GitHub API: The unauthenticated Search API is rate-limited. Consider adding a simple backend proxy that injects a server-side token and rate limits requests. Do not expose tokens in frontend code.
+- DevTools overlay triggers unexpectedly: Comment or relax the detection in public/anti-tamper.js.
+- Obfuscation issues after build: Temporarily disable postbuild (remove scripts.postbuild in package.json) to isolate problems.
+
+License
+- You control the license in your GitHub repository. Add or update a LICENSE file if needed.
+
+Owner
+- GitHub: https://github.com/maxwarzet
